@@ -1,0 +1,4 @@
+mixin formField(labelText, fieldName, fieldType='text')
+  .form-group
+    label(for=fieldName)= labelText
+    input(id=fieldName type=fieldType name=fieldName required value=project[fieldName] || '')

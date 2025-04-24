@@ -1,0 +1,43 @@
+extends layout
+
+block content
+  h1 Manage Team Members
+  h2= project.name
+
+  // Current Team Members Section
+  h3 Current Team Members
+  if project.teamMembers && project.teamMembers.length > 0
+    ul.member-list
+      each member in project.teamMembers
+        li= member.name + ' (' + member.email + ')'
+  else
+    p No team members assigned yet.
+  
+
+  // Register New User 
+  h3 Register New User to Project
+  form(method='POST' action='/users/register')
+    input(type='hidden' name='projectId' value=project._id)
+    .form-group
+      label(for='name') Name:
+      input#name.form-control(type='text' name='name' placeholder='User Name' required)
+    
+    .form-group
+      label(for='email') Email:
+      input#email.form-control(type='email' name='email' placeholder='user@example.com' required)
+    
+    .form-group
+        label(for='role') Role:
+        select#role.form-control(name='role')
+            option(value='Developer') Developer
+            option(value='Designer') Designer
+            option(value='Manager') Manager
+            option(value='Tester') Tester
+
+    .form-group
+      label(for='password') Password:
+      input#password.form-control(type='password' name='password' placeholder='Password')
+    
+    button.btn(type='submit') Register User
+
+  a(href=`/projects/${project._id}`) Back to Project

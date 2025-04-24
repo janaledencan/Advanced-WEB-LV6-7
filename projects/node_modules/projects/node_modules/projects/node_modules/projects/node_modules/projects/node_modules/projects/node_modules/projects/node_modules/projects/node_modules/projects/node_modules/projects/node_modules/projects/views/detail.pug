@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  h1.mb-4.text-primary= project.name
+  .card.mb-4
+    .card-body
+      p.card-text Description: #{project.description}
+      p.card-text Price: $#{project.price.toFixed(2)}
+      p.card-text Start Date: #{project.startDate.toISOString().split('T')[0]}
+      p.card-text End Date: #{project.endDate.toISOString().split('T')[0]}
+  h2.mt-4 Completed Work
+  ul.list-group.mb-4
+    each work in project.completedWork
+      li.list-group-item= work
+    else
+      li.list-group-item.text-muted No completed work yet
+  h2 Team Members
+  ul.list-group.mb-4
+    each member in project.teamMembers
+      li.list-group-item= member.name
+    else
+      li.list-group-item.text-muted No team members assigned
+  a.btn.btn-outline-primary(href=`/projects/${project._id}/members`) Manage Team Members
+  a.btn.btn-secondary.ms-2(href=`/projects/${project._id}/edit`) Edit Project
