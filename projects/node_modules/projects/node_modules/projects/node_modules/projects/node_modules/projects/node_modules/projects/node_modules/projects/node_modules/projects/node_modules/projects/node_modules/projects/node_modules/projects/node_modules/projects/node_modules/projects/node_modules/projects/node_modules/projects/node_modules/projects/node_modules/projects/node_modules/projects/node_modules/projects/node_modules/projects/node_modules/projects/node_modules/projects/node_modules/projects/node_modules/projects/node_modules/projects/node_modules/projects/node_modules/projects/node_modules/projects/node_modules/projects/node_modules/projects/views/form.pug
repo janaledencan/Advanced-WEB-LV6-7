@@ -22,11 +22,7 @@ block content
       label.form-label(for='completedWork') Completed Work:
       textarea#completedWork.form-control(name='completedWork' rows='4')= project.completedWork || ''
     .mb-3
-      label.form-label Available Users:
-      .d-flex.flex-wrap.gap-2.mb-2
-        each user in availableUsers
-          button.btn.btn-outline-secondary(type='button' data-id=user._id)
-            span.user-name= user.name
-            i.check-icon.ms-1 ✓
-      input#selectedUsers(type='hidden' name='teamMembers')
+      label.form-check-label(for='archived') Archived:
+      input#archived.form-check-input(type='checkbox', name='archived', checked=project.archived ? true : false)
+
     button.btn.btn-primary(type='submit') Save Project

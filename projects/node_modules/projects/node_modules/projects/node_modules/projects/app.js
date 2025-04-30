@@ -10,7 +10,13 @@ var logger = require("morgan");
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 const projectsRouter = require("./routes/projects");
+const dashboardRouter = require("./routes/dashboard");
+
 const methodOverride = require("method-override"); //used to manipulate POST, for delete
+
+const session = require("express-session");
+const passport = require("passport");
+require("./config/passport");
 
 var app = express();
 
@@ -34,12 +40,26 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(methodOverride("_method"));
+app.use(
+  session({
+    secret: "my-secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use((req, res, next) => {
+  res.locals.currentUser = req.user;
+  next();
+});
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 
 app.use("/projects", projectsRouter);
-// app.use("/api/users", require("./routes/users")); //MOZDA MI NE TREBA
+app.use("/", dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -48,7 +68,6 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
 

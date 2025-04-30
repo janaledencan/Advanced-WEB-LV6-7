@@ -2,6 +2,9 @@ const express = require("express");
 const Project = require("../models/Project");
 const User = require("../models/User");
 const router = express.Router();
+const { isAuthenticated, isManager } = require("../middlewares");
+const mongoose = require("mongoose");
+const { Types } = require("mongoose");
 
 //Create project
 router.post("/", async (req, res) => {
@@ -9,7 +12,11 @@ router.post("/", async (req, res) => {
     // Process teamMembers from form
     let teamMembers = [];
     if (req.body.teamMembers) {
-      teamMembers = req.body.teamMembers.split(",");
+      if (typeof req.body.teamMembers === "string") {
+        teamMembers = req.body.teamMembers.split(",");
+      } else if (Array.isArray(req.body.teamMembers)) {
+        teamMembers = req.body.teamMembers;
+      }
     }
 
     // Create project with all fields
@@ -19,8 +26,12 @@ router.post("/", async (req, res) => {
       price: req.body.price,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
-      completedWork: req.body.completedWork,
+      completedWork: req.body.completedWork
+        ? req.body.completedWork.split(",")
+        : [],
       teamMembers: teamMembers,
+      createdBy: req.user._id,
+      archived: req.body.archived === "on",
     });
 
     await project.save();
@@ -35,7 +46,7 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const projects = await Project.find().populate("teamMembers");
-    res.render("index", { projects });
+    res.render("index", { projects, currentUser: req.user });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
@@ -61,7 +72,7 @@ router.get("/new", async (req, res) => {
 });
 
 // GET project detail
-router.get("/:id", async (req, res) => {
+router.get("/:id", isAuthenticated, async (req, res) => {
   const project = await Project.findById(req.params.id).populate("teamMembers");
   res.render("detail", { project });
 });
@@ -71,8 +82,6 @@ router.get("/:id/edit", async (req, res) => {
   try {
     // Get the project to edit
     const project = await Project.findById(req.params.id);
-
-    // Get all users for the dropdown
     const users = await User.find();
 
     res.render("form", {
@@ -88,19 +97,21 @@ router.get("/:id/edit", async (req, res) => {
 });
 
 //Updaate project
-const mongoose = require("mongoose");
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", isAuthenticated, isManager, async (req, res) => {
   try {
-    let teamMembers = req.body.teamMembers || [];
-    // Ensure teamMembers is always an array
-    if (!Array.isArray(teamMembers)) {
-      teamMembers = [teamMembers];
+    let teamMembers = req.body.teamMembers;
+
+    if (typeof teamMembers === "string") {
+      teamMembers = teamMembers.split(",");
+    } else if (!teamMembers) {
+      const existingProject = await Project.findById(req.params.id);
+      teamMembers = existingProject.teamMembers.map((id) => id.toString());
     }
     // Convert all to ObjectId
     teamMembers = teamMembers
-      .filter((id) => id) // remove empty strings
-      .map((id) => mongoose.Types.ObjectId(id));
+      .filter((id) => id)
+      .map((id) => new Types.ObjectId(id));
 
     const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
@@ -111,6 +122,7 @@ router.put("/:id", async (req, res) => {
         startDate: req.body.startDate,
         endDate: req.body.endDate,
         completedWork: req.body.completedWork,
+        archived: req.body.archived === "on",
         teamMembers: teamMembers,
       },
       { new: true }
@@ -123,7 +135,7 @@ router.put("/:id", async (req, res) => {
 });
 
 //Delete project
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", isAuthenticated, isManager, async (req, res) => {
   try {
     await Project.findByIdAndDelete(req.params.id);
     res.redirect("/projects");
@@ -146,6 +158,52 @@ router.post("/:id/members", async (req, res) => {
   }
 });
 
+// Add existing users to a project
+router.post("/:id/members/add", async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    const selectedUsers = req.body.selectedUsers;
+
+    if (selectedUsers) {
+      const userIds = Array.isArray(selectedUsers)
+        ? selectedUsers
+        : [selectedUsers];
+
+      // Add each selected user if they're not already a member
+      for (const userId of userIds) {
+        if (!project.teamMembers.includes(userId)) {
+          project.teamMembers.push(userId);
+        }
+      }
+
+      await project.save();
+    }
+
+    res.redirect(`/projects/${req.params.id}/members`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error adding team members");
+  }
+});
+
+// Remove a user from a project
+router.post("/:id/members/remove", async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    const userId = req.body.userId;
+
+    project.teamMembers = project.teamMembers.filter(
+      (member) => member.toString() !== userId
+    );
+
+    await project.save();
+    res.redirect(`/projects/${req.params.id}/members`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error removing team member");
+  }
+});
+
 // Get team member management page
 router.get("/:id/members", async (req, res) => {
   try {
@@ -162,6 +220,26 @@ router.get("/:id/members", async (req, res) => {
     console.error(err);
     res.status(500).send("Error loading team members");
   }
+});
+
+// Endpoint for team members to update completed work on a project they are part of
+router.patch("/:id/work", isAuthenticated, async (req, res) => {
+  const projectId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    console.error("Invalid or missing project ID:", projectId);
+    return res.status(400).send("Invalid project ID");
+  }
+  const project = await Project.findOne({
+    _id: req.params.id,
+    teamMembers: req.user._id,
+  });
+
+  if (!project) return res.status(403).send("Access denied");
+
+  project.completedWork = req.body.completedWork;
+  await project.save();
+  res.redirect("/dashboard");
 });
 
 module.exports = router;

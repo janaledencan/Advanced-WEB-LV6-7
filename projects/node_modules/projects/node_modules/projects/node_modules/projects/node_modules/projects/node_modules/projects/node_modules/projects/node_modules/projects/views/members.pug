@@ -7,37 +7,37 @@ block content
   // Current Team Members Section
   h3 Current Team Members
   if project.teamMembers && project.teamMembers.length > 0
-    ul.member-list
+    ul.list-group.mb-4
       each member in project.teamMembers
-        li= member.name + ' (' + member.email + ')'
+        li.list-group-item.d-flex.justify-content-between.align-items-center
+          span= member.name + ' (' + member.email + ')'
+          form(method='POST' action=`/projects/${project._id}/members/remove` style='display:inline')
+            input(type='hidden' name='userId' value=member._id)
+            button.btn.btn-sm.btn-danger(type='submit') Remove
   else
-    p No team members assigned yet.
+    p.text-muted No team members assigned yet.
   
+  // Add Existing Users Section
+  h3.mt-4 Add Existing Users
+  if users && users.length > 0
+    form(method='POST' action=`/projects/${project._id}/members/add`)
+      .row
+        each user in users
+          - const isAlreadyMember = project.teamMembers.some(member => member._id.toString() === user._id.toString())
+          if !isAlreadyMember
+            .col-md-4.mb-3
+              .card
+                .card-body
+                  h5.card-title= user.name
+                  p.card-text.text-muted= user.email
+                  p.card-text
+                    small Role: #{user.role}
+                  .form-check
+                    input.form-check-input(type='checkbox' name='selectedUsers' value=user._id id=`user-${user._id}`)
+                    label.form-check-label(for=`user-${user._id}`) Select
+      button.btn.btn-primary.mt-3(type='submit') Add Selected Users
+  else
+    p.text-muted No users available to add.
 
-  // Register New User 
-  h3 Register New User to Project
-  form(method='POST' action='/users/register')
-    input(type='hidden' name='projectId' value=project._id)
-    .form-group
-      label(for='name') Name:
-      input#name.form-control(type='text' name='name' placeholder='User Name' required)
-    
-    .form-group
-      label(for='email') Email:
-      input#email.form-control(type='email' name='email' placeholder='user@example.com' required)
-    
-    .form-group
-        label(for='role') Role:
-        select#role.form-control(name='role')
-            option(value='Developer') Developer
-            option(value='Designer') Designer
-            option(value='Manager') Manager
-            option(value='Tester') Tester
-
-    .form-group
-      label(for='password') Password:
-      input#password.form-control(type='password' name='password' placeholder='Password')
-    
-    button.btn(type='submit') Register User
-
-  a(href=`/projects/${project._id}`) Back to Project
+  
+  a.btn.btn-secondary.mt-4(href=`/projects/${project._id}`) Back to Project

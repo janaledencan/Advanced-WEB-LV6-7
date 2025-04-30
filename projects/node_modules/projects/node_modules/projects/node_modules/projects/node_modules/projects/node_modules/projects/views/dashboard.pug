@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  h1 My Dashboard
+  .row
+    .col-md-6
+      h2 Managed Projects
+      each project in managedProjects
+        .card.mb-3
+          .card-body
+            h5.card-title= project.name
+            a.btn.btn-primary(href=`/projects/${project._id}`) View
+    .col-md-6
+      h2 Member Projects
+      each project in memberProjects
+        .card.mb-3
+          .card-body
+            h5.card-title= project.name
+            if project._id
+              form(action=`/projects/${project._id}/work?_method=PATCH`, method='POST')
+                label(for="completedWork") Completed Work:
+                textarea.form-control(name="completedWork")= project.completedWork.join(", ")
+                button.btn.btn-primary.mt-2(type='submit') Update Work
+
+            else
+              p.text-danger Missing project ID.

@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  h1.mb-4 Register
+  form(method='POST', action='/users/register')
+    .mb-3
+      label.form-label(for='name') Name:
+      input#name.form-control(type='text', name='name', required)
+    .mb-3
+      label.form-label(for='email') Email:
+      input#email.form-control(type='email', name='email', required)
+    .mb-3
+      label.form-label(for='password') Password:
+      input#password.form-control(type='password', name='password', required)
+    .mb-3
+      label.form-label(for='role') Role:
+      select#role.form-control(name='role')
+        option(value='Developer') Developer
+        option(value='Designer') Designer
+        option(value='Manager') Manager
+        option(value='Tester') Tester
+    button.btn.btn-primary(type='submit') Register
+  p.mt-3
+    | Already have an account?
+    br
+    a(href='/users/login') Login here

@@ -20,5 +20,6 @@ block content
       li.list-group-item= member.name
     else
       li.list-group-item.text-muted No team members assigned
-  a.btn.btn-outline-primary(href=`/projects/${project._id}/members`) Manage Team Members
+  if currentUser && project.createdBy && project.createdBy.toString() === currentUser._id.toString()
+    a.btn.btn-outline-primary(href=`/projects/${project._id}/members`) Manage Team Members
   a.btn.btn-secondary.ms-2(href=`/projects/${project._id}/edit`) Edit Project

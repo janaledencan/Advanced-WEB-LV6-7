@@ -7,7 +7,14 @@ const projectSchema = new mongoose.Schema({
   completedWork: [String],
   startDate: { type: Date, default: Date.now },
   endDate: Date,
-  teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  teamMembers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  archived: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("Project", projectSchema);

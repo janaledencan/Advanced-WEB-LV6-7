@@ -1,0 +1,16 @@
+extends layout
+
+block content
+  h1.mb-4 Login
+  form(method='POST', action='/users/login')
+    .mb-3
+      label.form-label(for='email') Email:
+      input#email.form-control(type='email', name='email', required)
+    .mb-3
+      label.form-label(for='password') Password:
+      input#password.form-control(type='password', name='password', required)
+    button.btn.btn-primary(type='submit') Login
+  p.mt-3
+    | Don't have an account?
+    br
+    a(href='/users/register') Register here

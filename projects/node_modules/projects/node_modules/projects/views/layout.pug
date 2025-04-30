@@ -14,8 +14,20 @@ html(lang='en')
         ul.navbar-nav
           li.nav-item
             a.nav-link(href='/projects') All Projects
-          li.nav-item
-            a.nav-link(href='/projects/new') Create New Project
+          if currentUser
+            li.nav-item
+              a.nav-link(href='/projects/new') Create New Project
+            li.nav-item
+              a.nav-link(href='/dashboard') Dashboard
+            li.nav-item
+              a.nav-link(href='/archive') Archive
+            li.nav-item
+              a.nav-link(href='/users/logout') Logout
+          else
+            li.nav-item
+              a.nav-link(href='/users/login') Login
+            li.nav-item
+              a.nav-link(href='/users/register') Register
     .container
       block content
     // Bootstrap 5 JS Bundle

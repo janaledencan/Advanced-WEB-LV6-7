@@ -1,0 +1,33 @@
+extends layout
+
+block content
+  h1.mb-4 Archived Projects
+  if projects.length
+    .table-responsive
+      table.table.table-striped
+        thead
+          tr
+            th Name
+            th Description
+            th Price
+            th Start Date
+            th End Date
+            th Role
+            th Actions
+        tbody
+          each project in projects
+            tr
+              td= project.name
+              td= project.description
+              td $#{project.price.toFixed(2)}
+              td= project.startDate.toISOString().split('T')[0]
+              td= project.endDate.toISOString().split('T')[0]
+              td
+                if project.createdBy && project.createdBy.equals(currentUser._id)
+                  | Manager
+                else
+                  | Member
+              td
+                a.btn.btn-sm.btn-primary(href=`/projects/${project._id}`) View
+  else
+    p.text-muted No archived projects found.
